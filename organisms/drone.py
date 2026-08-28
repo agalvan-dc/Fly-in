@@ -1,13 +1,13 @@
 from typing import Any
 
 class Drone:
-    def __init__(self, start_node: str, drone_id: int) -> None:
-        self.drone_id: int = drone_id
+    def __init__(self, start_node: str, id: int) -> None:
+        self.id: int = id
         self.curr_node: str = start_node
         self.path: list[str] = []
         self.path_index: int = 0
         self.transit_turns: int = 0
-        self.history: dict[str, Any] = {}
+        self.history: list[dict[str, Any]] = []
 
     @property
     def has_arrived(self) -> bool:

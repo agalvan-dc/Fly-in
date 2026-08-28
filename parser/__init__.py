@@ -1,10 +1,12 @@
 from .factory import Factory, Linkers
-from .processor import Processor, HubProcessor, ConnectionProcessor
+from .parser import parser
+from .processor import ConnectionProcessor, HubProcessor, Processor
 
-__all__= [
+__all__ = [
+    "ConnectionProcessor",
     "Factory",
-    "Linkers"
-    "Processor",
     "HubProcessor",
-    "ConnectionProcessor"
+    "Linkers",
+    "Processor",
+    "parser",
 ]

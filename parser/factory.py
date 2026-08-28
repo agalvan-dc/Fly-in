@@ -2,7 +2,7 @@ import re
 import sys
 import json
 from typing import Any
-from processor import ConnectionProcessor, HubProcessor, Processor
+from .processor import ConnectionProcessor, HubProcessor, Processor
 
 
 class Factory:

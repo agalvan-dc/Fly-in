@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
-
+from parser import parser
+from algorithmic import StateMachine, orq
 
 def main() -> None:
-    print()
+    parser()
+    StateMachine(orq())
 
 
 if __name__  == "__main__":
