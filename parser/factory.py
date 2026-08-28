@@ -2,7 +2,6 @@ import re
 import sys
 import json
 from typing import Any
-from pydantic import ValidationError
 from processor import ConnectionProcessor, HubProcessor, Processor
 
 
@@ -110,12 +109,32 @@ class Linkers:
         self.connections()
 
     def connections(self) -> None:
-        net: dict[str, list[str]] = {}
+        net: dict[str, list[str]] = {} 
+        
         try:
             with open(self.filepath, 'r', encoding='utf-8') as file:
-               data = json.load(file)                
+                data = json.load(file)                  
         except OSError as e:
             print(f"File error - {e}")
             sys.exit(1)
-         for name,  in datos['connections'].items():
-
+            
+        for name in data.get('Hub', {}):
+            linked_hubs = set()
+            
+            for conec in data.get('Connections', {}).keys():
+                split_conec = conec.split('-')
+                
+                if name in split_conec:
+                    neighbor = split_conec[0] if split_conec[0] != name else split_conec[1]
+                    linked_hubs.add(neighbor)
+            
+            net[name] = list(linked_hubs)
+        
+        output_path = "data/network.json"
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(net, f, indent=4)
+            print(f"Network generated in: {output_path}")
+        except OSError as e:
+            print(f"Error writing networkin file - {e}")
+            sys.exit(1)

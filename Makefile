@@ -9,7 +9,7 @@ build:
 run:
 	docker run --rm -it -v "$$(pwd):/app:z" --name $(CONTAINER_NAME) $(IMAGE_NAME) poetry run python fly-in.py $(MAP_DIR)
 
-# Nuevo: Abre una terminal de bash DENTRO del contenedor para explorar o debugear manualmente
+# Abre una terminal de bash DENTRO del contenedor para explorar o debugear manualmente
 shell:
 	docker run --rm -it -v "$$(pwd):/app:z" --name $(CONTAINER_NAME) $(IMAGE_NAME) /bin/bash
 
