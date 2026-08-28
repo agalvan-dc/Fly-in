@@ -1,48 +1,63 @@
-from organisms import Drone
-from enum import Enum
-from collections import deque
-
 import json
-
-class mov(Enum):
-    STILL = 0
-    CONNEC_MOVE = 1
-    MOVE = 2
-
+from collections import deque
 
 class Orchestrator:
     def __init__(self, map_path: str = "data/map.json",
                  network_path: str = "data/network.json") -> None:
-        self.paths: list[list[str]] = []
-
         try:
             with open(map_path, 'r', encoding='utf-8') as f:
-                self.map = json.load(f)
+                self.map_config = json.load(f)
             with open(network_path, 'r', encoding='utf-8') as f:
                 self.network = json.load(f)
         except OSError as e:
             raise RuntimeError(f"Reading file error - {e}") from e
 
-    def bfs(self, max_depth: int = 45) -> None:
-        all_nodes = set(self.network) | {n for neigh in self.network.values() for n in neigh}
-        if "start" not in all_nodes or "goal" not in all_nodes:
-            raise ValueError("No start or goal node found. Aborting...")
+    def get_shortest_valid_path(self,
+                                start_node: str,
+                                goal_node: str,
+                                restricted_nodes: set[str]) -> list[str]:
+        if start_node in restricted_nodes or goal_node in restricted_nodes:
+            return []
 
-        queue = deque([["start"]])
-        self.paths = []
+        queue = deque([[start_node]])
+        visited = {start_node}
 
         while queue:
             curr_path = queue.popleft()
             curr_node = curr_path[-1]
 
-            if len(curr_path) > max_depth:
-                continue
-            if curr_node == "goal":
-                self.paths.append(curr_path)
-                continue
+            if curr_node == goal_node:
+                return curr_path
 
-            for neighbour in self.network.get(curr_node, []):
-                if neighbour not in curr_path:
+            neighbours = self.network.get(curr_node, [])
+            neighbours.sort(key=lambda n: 0 if self.get_zone_type(n) == "priority" else 1)
+
+            for neighbour in neighbours:
+                if neighbour not in visited and neighbour not in restricted_nodes:
+                    visited.add(neighbour)
                     queue.append(curr_path + [neighbour])
 
-        self.paths.sort(key=len)
+        return []
+
+    def get_nb_drones(self) -> int:
+        return self.get_node_capacity("start")
+
+    def get_node_capacity(self, node_name: str) -> int:
+        hub_data = self.map_config.get("Hub", {}).get(node_name, {})
+        return hub_data.get("max_drones", 1)
+
+    def get_link_capacity(self, node_a: str, node_b: str) -> int:
+        connections = self.map_config.get("Connections", {})
+        
+        link_str_1 = f"{node_a}-{node_b}"
+        link_str_2 = f"{node_b}-{node_a}"
+        
+        link_data = connections.get(link_str_1) or connections.get(link_str_2, {})
+        return link_data.get("max_link_capacity", 1)
+
+    def get_zone_type(self, node_name: str) -> str:
+        return self.map_config.get("Hub", {}).get(node_name, {}).get("zone", "normal")
+
+    def get_node_coor(self, node_name: str) -> list[int]:
+        hub_data = self.map_config.get("Hub", {}).get(node_name, {})
+        return hub_data.get("coor", [0, 0])
