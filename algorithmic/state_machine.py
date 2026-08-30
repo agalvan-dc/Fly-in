@@ -2,6 +2,7 @@ import json
 from enum import Enum
 from organisms import Drone
 from .orquestrator import Orchestrator
+from typing import Any
 
 class Move(Enum):
     STILL = 0
@@ -14,6 +15,7 @@ class StateMachine:
         self.total_drones = self.orq.get_nb_drones()
         self.drones = [Drone(id=i, start_node="start") for i in range(self.total_drones)]
         self.tick = 0
+        self.log: dict[int, Any] = {}
         self.run()
 
     def run(self) -> None:
@@ -28,6 +30,7 @@ class StateMachine:
         curr_node_usage = {node: 0 for node in self.orq.network}
         curr_link_usage = {}
         tick_status = {d.id: Move.STILL.value for d in self.drones}
+        log = []
 
         for d in self.drones:
             if d.has_arrived:
@@ -77,12 +80,17 @@ class StateMachine:
                     d.advance()
                     curr_node_usage[target] += 1
                     tick_status[d.id] = Move.MOVE.value
+                    log.append({"drone": d.id,
+                                "coor": self.orq.get_node_coor(d.curr_node),
+                                "status": tick_status[d.id]})
+                    self.log[self.tick] = log
+
             else:
                 new_path = self.orq.get_shortest_valid_path(d.curr_node, "goal", {target})
                 if new_path:
                     d.path = new_path
                     d.path_index = 0
-                
+                 
                 tick_status[d.id] = Move.STILL.value
 
         turn_movements = []
@@ -96,14 +104,7 @@ class StateMachine:
         if turn_movements:
             print(" ".join(turn_movements))
 
-        for d in self.drones:
-            node_for_coor = d.next_node if tick_status[d.id] == Move.CONNEC.value else d.curr_node
-            d.history.append({
-                "coor": self.orq.get_node_coor(node_for_coor),
-                "status": tick_status[d.id]
-            })
 
     def export_history(self, filepath: str) -> None:
-        output = {f"drone_{d.id}": d.history for d in self.drones}
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(output, f, indent=4)
+            json.dump(self.log, f, indent=4)

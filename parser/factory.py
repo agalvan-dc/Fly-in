@@ -6,9 +6,9 @@ from .processor import ConnectionProcessor, HubProcessor, Processor
 
 
 class Factory:
-    def __init__(self) -> None:
+    def __init__(self, filepath: str | None = None) -> None:
         self.nbr_drones: int = 0
-        self.process_file()
+        self.process_file(filepath)
 
     @staticmethod
     def _parse_restrictions(content: str) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 from .factory import Factory, Linkers
 
-def parser() -> None:
-    Factory()
+def parser(filepath: str | None = None) -> None:
+    Factory(filepath)
     Linkers()
 

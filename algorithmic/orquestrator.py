@@ -36,7 +36,6 @@ class Orchestrator:
                 if neighbour not in visited and neighbour not in restricted_nodes:
                     visited.add(neighbour)
                     queue.append(curr_path + [neighbour])
-
         return []
 
     def get_nb_drones(self) -> int:

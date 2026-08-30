@@ -1,7 +1,7 @@
-from .orquestrator import Orchestrator as orq
+from .orquestrator import Orchestrator
 from .state_machine import StateMachine
 
 __all__ = [
     "StateMachine",
-    "orq",
+    "Orchestrator",
 ]
