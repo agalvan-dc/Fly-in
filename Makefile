@@ -53,10 +53,12 @@ clean:
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@find . -type f -name "*.json" -delete 2>/dev/null || true
+	@find . -type f -name "movements.txt" -delete 2>/dev/null || true
 	@rm -rf .mypy_cache poetry.lock 2>/dev/null || true
 	@echo "Cleaning Docker environment..."
 	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rmi -f $(IMAGE_NAME) 2>/dev/null || true
+	@docker rmi -f python:3.12-slim 2>/dev/null || true
 	@docker image prune -f
 
 .PHONY: build run shell debug lint lint-strict clean

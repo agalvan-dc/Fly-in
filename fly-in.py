@@ -58,7 +58,8 @@ def main() -> None:
     else:
         filepath = sys.argv[1]
 
-        with console.status("[bold green]Parsing map file...", spinner="dots") as status:
+        with console.status("[bold green]Parsing map file...",
+                            spinner="dots") as status:
             try:
                 parser(filepath)
                 console.print("[bold green]✔[/bold green] Map parsed successfully")
@@ -69,7 +70,8 @@ def main() -> None:
             status.update("[bold cyan]Calculating paths & running state machine...")
             try:
                 StateMachine(Orchestrator())
-                console.print("[bold green]✔[/bold green] Pathfinding computation completed")
+                console.print("[bold green]✔[/bold green] Pathfinding "
+                              "computation completed")
             except (OSError, ValueError) as e:
                 console.print(f"[bold red]State machine error:[/bold red] {e}")
                 sys.exit(1)
@@ -77,7 +79,8 @@ def main() -> None:
             status.update("[bold yellow]Launching visualizer...")
             sleep(0.3)
 
-        console.print("[bold green]✔[/bold green] Environment ready. Opening Display...")
+        console.print("[bold green]✔[/bold green] Environment ready. "
+                      "Opening Display...")
         try:
             Display()
         except OSError as e:

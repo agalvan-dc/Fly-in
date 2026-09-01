@@ -1,19 +1,25 @@
 import json
 from enum import Enum
 from typing import Any
+
 from organisms import Drone
+
 from .orquestrator import Orchestrator
+
 
 class Move(Enum):
     STILL = 0
     CONNEC = 1
     MOVE = 2
 
+
 class StateMachine:
     def __init__(self, orquestrator: Orchestrator) -> None:
         self.orq = orquestrator
         self.total_drones = self.orq.get_nb_drones()
-        self.drones = [Drone(id=i, start_node="start") for i in range(self.total_drones)]
+        self.drones = [Drone(id=i,
+                             start_node="start")
+                       for i in range(self.total_drones)]
         self.tick = 0
         self.log: dict[int, Any] = {}
         self.txt_log: list[str] = []
@@ -23,13 +29,13 @@ class StateMachine:
         while not all(d.has_arrived for d in self.drones):
             self.tick += 1
             self.simulate_tick()
-            
+
         print(f"\033[32;1mSim ended in {self.tick} turns\033[0m")
         self.export_history("data/log.json", "data/movements.txt")
 
     def simulate_tick(self) -> None:
         curr_node_usage = {node: 0 for node in self.orq.network}
-        curr_link_usage = {}
+        curr_link_usage: dict[Any, Any] = {}
         tick_status = {d.id: Move.STILL.value for d in self.drones}
 
         for d in self.drones:
@@ -40,7 +46,7 @@ class StateMachine:
                 curr_link_usage[link] = curr_link_usage.get(link, 0) + 1
             else:
                 curr_node_usage[d.curr_node] += 1
-                
+
         for d in self.drones:
             if d.has_arrived:
                 tick_status[d.id] = Move.STILL.value
@@ -53,14 +59,14 @@ class StateMachine:
                     tick_status[d.id] = Move.MOVE.value
                 else:
                     tick_status[d.id] = Move.CONNEC.value
-                continue                
-                
+                continue
+
             if not d.path:
                 d.path = self.orq.get_shortest_valid_path(d.curr_node, "goal", set())
                 d.path_index = 0
-                
+
             target = d.next_node
-            if not target: 
+            if not target:
                 tick_status[d.id] = Move.STILL.value
                 continue
 
@@ -68,7 +74,8 @@ class StateMachine:
             node_cap = self.orq.get_node_capacity(target)
             link_cap = self.orq.get_link_capacity(d.curr_node, target)
 
-            if curr_node_usage.get(target, 0) < node_cap and curr_link_usage.get(link, 0) < link_cap:
+            if (curr_node_usage.get(target, 0) < node_cap
+               and curr_link_usage.get(link, 0) < link_cap):
                 curr_node_usage[d.curr_node] -= 1
                 curr_link_usage[link] = curr_link_usage.get(link, 0) + 1
 
@@ -79,17 +86,18 @@ class StateMachine:
                     d.advance()
                     curr_node_usage[target] += 1
                     tick_status[d.id] = Move.MOVE.value
-                    
+
             else:
-                new_path = self.orq.get_shortest_valid_path(d.curr_node, "goal", {target})
+                new_path = self.orq.get_shortest_valid_path(d.curr_node,
+                                                            "goal", {target})
                 if new_path:
                     movimientos_restantes_actual = len(d.path) - d.path_index
                     movimientos_nueva_ruta = len(new_path)
-                    
+
                     if movimientos_nueva_ruta < movimientos_restantes_actual + 1:
                         d.path = new_path
                         d.path_index = 0
-                 
+
                 tick_status[d.id] = Move.STILL.value
 
         log = []
@@ -115,6 +123,6 @@ class StateMachine:
     def export_history(self, json_path: str, txt_path: str) -> None:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(self.log, f, indent=4)
-        
+
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(self.txt_log))

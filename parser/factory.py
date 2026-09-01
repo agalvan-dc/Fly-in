@@ -1,7 +1,8 @@
+import json
 import re
 import sys
-import json
 from typing import Any
+
 from .processor import ConnectionProcessor, HubProcessor, Processor
 
 
@@ -48,32 +49,37 @@ class Factory:
             if not nb_drones_parsed:
                 if not clean_line.startswith("nb_drones:"):
                     raise SyntaxError(
-                            f"Line {line_num}: First functional line must be: 'nb_drones:'"
+                            f"Line {line_num}: First "
+                            f"functional line must be: 'nb_drones:'"
                     )
                 parts = clean_line.split(":")
                 if len(parts) != 2 or not parts[1].strip().isdigit():
-                    raise SyntaxError(f"Line {line_num}: Incorrect Format 'nb_drones: <int>' ")
+                    raise SyntaxError(f"Line {line_num}: "
+                                      f"Incorrect Format 'nb_drones: <int>' ")
 
                 self.nbr_drones = int(parts[1].strip())
                 if self.nbr_drones <= 0:
-                    raise ValueError(f"Line {line_num}: 'nb_drones' must be > 0")
+                    raise ValueError(f"Line {line_num}: "
+                                     f"'nb_drones' must be > 0")
 
                 nb_drones_parsed = True
                 continue
 
             if ":" not in clean_line:
-                raise SyntaxError(f"Line {line_num}: Line not recognised '{clean_line}'")
+                raise SyntaxError(f"Line {line_num}: "
+                                  f"Line not recognised '{clean_line}'")
 
             tag, content = [p.strip() for p in clean_line.split(":", 1)]
-          
+
             try:
                 restrictions = self._parse_restrictions(content)
-                base_tokens = content.split("[")[0].strip().split() # ]
+                base_tokens = content.split("[")[0].strip().split()
 
                 if tag in ("start_hub", "hub", "end_hub"):
                     if len(base_tokens) != 3:
                         raise SyntaxError(
-                            f"Line {line_num}: Hub format must be '<name> <x> <y>'"
+                            f"Line {line_num}: Hub format "
+                            f"must be '<name> <x> <y>'"
                         )
 
                     name, x_str, y_str = base_tokens
@@ -82,17 +88,20 @@ class Factory:
                     except ValueError:
                         raise ValueError(f"Line {line_num}: Coor must be ints")
 
-                    if tag in ("start_hub", "end_hub") and "max_drones" not in restrictions:
+                    if (tag in ("start_hub", "end_hub")
+                       and "max_drones" not in restrictions):
                         restrictions["max_drones"] = self.nbr_drones
 
                     HubProcessor(name=name, coor=coor, **restrictions)
                 elif tag == "connection":
                     if len(base_tokens) != 1:
-                        raise SyntaxError(f"Line {line_num}: Invalid Connection format")
+                        raise SyntaxError(f"Line {line_num}: "
+                                          f"Invalid Connection format")
 
                     ConnectionProcessor(name=base_tokens[0], **restrictions)
                 else:
-                    raise SyntaxError(f"Line {line_num}: Forbidden tag '{tag}'")
+                    raise SyntaxError(f"Line {line_num}: "
+                                      f"Forbidden tag '{tag}'")
 
             except (ValueError, SyntaxError) as e:
                 print(f"Error processing line {line_num} ({tag}): {e}")
@@ -109,27 +118,28 @@ class Linkers:
         self.connections()
 
     def connections(self) -> None:
-        net: dict[str, list[str]] = {} 
-        
+        net: dict[str, list[str]] = {}
+
         try:
             with open(self.filepath, 'r', encoding='utf-8') as file:
-                data = json.load(file)                  
+                data = json.load(file)
         except OSError as e:
             print(f"File error - {e}")
             sys.exit(1)
-            
+
         for name in data.get('Hub', {}):
             linked_hubs = set()
-            
+
             for conec in data.get('Connections', {}).keys():
                 split_conec = conec.split('-')
-                
+
                 if name in split_conec:
-                    neighbor = split_conec[0] if split_conec[0] != name else split_conec[1]
+                    neighbor = (split_conec[0] if split_conec[0] != name
+                                else split_conec[1])
                     linked_hubs.add(neighbor)
-            
+
             net[name] = list(linked_hubs)
-        
+
         output_path = "data/network.json"
         try:
             with open(output_path, 'w', encoding='utf-8') as f:

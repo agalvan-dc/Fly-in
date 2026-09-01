@@ -1,5 +1,7 @@
 import json
 from collections import deque
+from typing import Any
+
 
 class Orchestrator:
     def __init__(self, map_path: str = "data/map.json",
@@ -30,7 +32,8 @@ class Orchestrator:
                 return curr_path
 
             neighbours = self.network.get(curr_node, [])
-            neighbours.sort(key=lambda n: 0 if self.get_zone_type(n) == "priority" else 1)
+            neighbours.sort(key=lambda n: 0 if
+                            self.get_zone_type(n) == "priority" else 1)
 
             for neighbour in neighbours:
                 if neighbour not in visited and neighbour not in restricted_nodes:
@@ -38,25 +41,25 @@ class Orchestrator:
                     queue.append(curr_path + [neighbour])
         return []
 
-    def get_nb_drones(self) -> int:
+    def get_nb_drones(self) -> Any:
         return self.get_node_capacity("start")
 
-    def get_node_capacity(self, node_name: str) -> int:
+    def get_node_capacity(self, node_name: str) -> Any:
         hub_data = self.map_config.get("Hub", {}).get(node_name, {})
         return hub_data.get("max_drones", 1)
 
-    def get_link_capacity(self, node_a: str, node_b: str) -> int:
+    def get_link_capacity(self, node_a: str, node_b: str) -> Any:
         connections = self.map_config.get("Connections", {})
-        
+
         link_str_1 = f"{node_a}-{node_b}"
         link_str_2 = f"{node_b}-{node_a}"
-        
+
         link_data = connections.get(link_str_1) or connections.get(link_str_2, {})
         return link_data.get("max_link_capacity", 1)
 
-    def get_zone_type(self, node_name: str) -> str:
+    def get_zone_type(self, node_name: str) -> Any:
         return self.map_config.get("Hub", {}).get(node_name, {}).get("zone", "normal")
 
-    def get_node_coor(self, node_name: str) -> list[int]:
+    def get_node_coor(self, node_name: str) -> Any:
         hub_data = self.map_config.get("Hub", {}).get(node_name, {})
         return hub_data.get("coor", [0, 0])

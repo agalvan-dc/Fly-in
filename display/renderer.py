@@ -1,4 +1,5 @@
 import colorsys
+from typing import Any
 import json
 import math
 import sys
@@ -7,7 +8,11 @@ import pygame
 
 
 class Renderer:
-    def __init__(self, width: int = 1024, height: int = 768, node_config: str = "data/map.json", ticks: str = "data/log.json") -> None:
+    def __init__(self,
+                 width: int = 1024,
+                 height: int = 768,
+                 node_config: str = "data/map.json",
+                 ticks: str = "data/log.json") -> None:
         try:
             with open(node_config, "r", encoding="utf-8") as f:
                 self.node_config = json.load(f)
@@ -21,15 +26,15 @@ class Renderer:
         self.time_acc = 0.0
         self.tick_duration = 0.8
 
-        self.drone_angles = {}
-        self.drone_colors = {}
-        
+        self.drone_angles: dict[Any, Any] = {}
+        self.drone_colors: dict[Any, Any] = {}
+
         self.nodes = self.node_config.get("Hub", {})
         self.connections = self.node_config.get("Connections", {})
         self.scale = 1.0
         self.offset_x = 0.0
         self.offset_y = 0.0
-        
+
         self.compute_scale_and_offset(width, height)
         self.init_drone_colors()
         self.inject_initial_state()
@@ -78,7 +83,7 @@ class Renderer:
 
         xs = [data["coor"][0] for data in self.nodes.values()]
         ys = [data["coor"][1] for data in self.nodes.values()]
-        
+
         min_x, max_x = min(xs), max(xs)
         min_y, max_y = min(ys), max(ys)
 
@@ -88,7 +93,7 @@ class Renderer:
         margin = 100
         scale_x = (width - margin * 2) / map_w
         scale_y = (height - margin * 2) / map_h
-        
+
         self.scale = min(scale_x, scale_y)
         self.offset_x = (width - (map_w * self.scale)) / 2 - (min_x * self.scale)
         self.offset_y = (height - (map_h * self.scale)) / 2 - (min_y * self.scale)
@@ -111,7 +116,8 @@ class Renderer:
                     self.current_idx = max(0, self.current_idx - 1)
                     self.time_acc = 0.0
                 elif event.key == pygame.K_k:
-                    self.current_idx = min(len(self.tick_keys) - 1, self.current_idx + 1)
+                    self.current_idx = min(len(self.tick_keys) - 1,
+                                           self.current_idx + 1)
                     self.time_acc = 0.0
                 elif event.key == pygame.K_SPACE:
                     self.current_idx = 0
@@ -143,7 +149,8 @@ class Renderer:
         # Conexiones
         for conn_name in self.connections:
             parts = conn_name.split("-")
-            if len(parts) == 2 and parts[0] in self.nodes and parts[1] in self.nodes:
+            if (len(parts) == 2 and parts[0]
+               in self.nodes and parts[1] in self.nodes):
                 c1 = self.nodes[parts[0]]["coor"]
                 c2 = self.nodes[parts[1]]["coor"]
                 p1 = self.to_screen(c1[0], c1[1])
@@ -168,14 +175,16 @@ class Renderer:
             drones_next = self.ticks.get(next_tick_str, [])
 
             next_drones_map = {d.get("id", i): d for i, d in enumerate(drones_next)}
-            progress = min(1.0, max(0.0, self.time_acc / self.tick_duration)) if self.is_playing else 0.0
+            progress = (min(1.0, max(0.0, self.time_acc / self.tick_duration))
+                        if self.is_playing else 0.0)
 
             for i, d in enumerate(drones_current):
                 d_id = d.get("id", i)
                 x1, y1 = d["coor"]
 
                 next_d = next_drones_map.get(d_id)
-                if next_d and self.current_idx < len(self.tick_keys) - 1 and self.is_playing:
+                if (next_d and self.current_idx < len(self.tick_keys) - 1
+                   and self.is_playing):
                     x2, y2 = next_d["coor"]
                 else:
                     x2, y2 = x1, y1
@@ -211,15 +220,21 @@ class Renderer:
             window.blit(text_surface, (15, y_offset))
             y_offset += 25
 
-        # Indicador visual al arrancar si está pausado
         if not self.is_playing and self.current_idx == 0:
-            prompt_surface = self.font_large.render("Press [ P ] to start animation", True, (255, 220, 100))
+            prompt_surface = self.font_large.render("Press [ P ] "
+                                                    "to start animation",
+                                                    True, (255, 220, 100))
             rect = prompt_surface.get_rect(center=(window.get_width() // 2, 40))
             window.blit(prompt_surface, rect)
 
         return True
 
-    def obtain_arrow(self, x: float, y: float, angle: float, size: float = 15) -> list[tuple[float, float]]:
+    def obtain_arrow(self,
+                     x: float,
+                     y: float,
+                     angle: float,
+                     size: float = 15
+                     ) -> list[tuple[float, float]]:
         p_x = x + math.cos(angle) * size
         p_y = y + math.sin(angle) * size
         bl_x = x + math.cos(angle + math.radians(140)) * size

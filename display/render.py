@@ -4,12 +4,19 @@ from .renderer import Renderer
 
 
 class Display:
-    def __init__(self, width: int = 1024, height: int = 768, node_config: str = "data/map.json", ticks: str = "data/log.json") -> None:
+    def __init__(self,
+                 width: int = 1024,
+                 height: int = 768,
+                 node_config: str = "data/map.json",
+                 ticks: str = "data/log.json") -> None:
         pygame.init()
         pygame.display.set_caption("Drone Simulation Visualizer")
         window = pygame.display.set_mode((width, height))
 
-        self.renderer = Renderer(width=width, height=height, node_config=node_config, ticks=ticks)
+        self.renderer = Renderer(width=width,
+                                 height=height,
+                                 node_config=node_config,
+                                 ticks=ticks)
         clock = pygame.time.Clock()
 
         running = True
