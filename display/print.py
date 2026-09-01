@@ -1,7 +1,8 @@
-from time import sleep, time
-import sys
-from questionary import Choice, Separator, Style, select
 import os
+import sys
+from time import sleep
+
+from questionary import Choice, Separator, Style, select
 
 
 def print_animated(text: str,
@@ -136,7 +137,7 @@ def print_maps() -> str:
         Separator("=== Easy ==="),
         Choice(title="01_linear_path",        value="easy/01_linear_path"),
         Choice(title="02_simple_fork",        value="easy/02_simple_fork"),
-        Choice(title="03_basic_capacity",     value="maps/easy/03_basic_capacity"),
+        Choice(title="03_basic_capacity",     value="easy/03_basic_capacity"),
     
          Separator("=== Medium ==="),
         Choice(title="01_dead_end_trap",      value="medium/01_dead_end_trap"),

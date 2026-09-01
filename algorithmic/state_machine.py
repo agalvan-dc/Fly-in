@@ -1,8 +1,8 @@
 import json
 from enum import Enum
+from typing import Any
 from organisms import Drone
 from .orquestrator import Orchestrator
-from typing import Any
 
 class Move(Enum):
     STILL = 0
@@ -16,6 +16,7 @@ class StateMachine:
         self.drones = [Drone(id=i, start_node="start") for i in range(self.total_drones)]
         self.tick = 0
         self.log: dict[int, Any] = {}
+        self.txt_log: list[str] = []
         self.run()
 
     def run(self) -> None:
@@ -24,13 +25,12 @@ class StateMachine:
             self.simulate_tick()
             
         print(f"\033[32;1mSim ended in {self.tick} turns\033[0m")
-        self.export_history("data/log.json")
+        self.export_history("data/log.json", "data/movements.txt")
 
     def simulate_tick(self) -> None:
         curr_node_usage = {node: 0 for node in self.orq.network}
         curr_link_usage = {}
         tick_status = {d.id: Move.STILL.value for d in self.drones}
-        log = []
 
         for d in self.drones:
             if d.has_arrived:
@@ -68,7 +68,6 @@ class StateMachine:
             node_cap = self.orq.get_node_capacity(target)
             link_cap = self.orq.get_link_capacity(d.curr_node, target)
 
-
             if curr_node_usage.get(target, 0) < node_cap and curr_link_usage.get(link, 0) < link_cap:
                 curr_node_usage[d.curr_node] -= 1
                 curr_link_usage[link] = curr_link_usage.get(link, 0) + 1
@@ -80,18 +79,27 @@ class StateMachine:
                     d.advance()
                     curr_node_usage[target] += 1
                     tick_status[d.id] = Move.MOVE.value
-                    log.append({"drone": d.id,
-                                "coor": self.orq.get_node_coor(d.curr_node),
-                                "status": tick_status[d.id]})
-                    self.log[self.tick] = log
-
+                    
             else:
                 new_path = self.orq.get_shortest_valid_path(d.curr_node, "goal", {target})
                 if new_path:
-                    d.path = new_path
-                    d.path_index = 0
+                    movimientos_restantes_actual = len(d.path) - d.path_index
+                    movimientos_nueva_ruta = len(new_path)
+                    
+                    if movimientos_nueva_ruta < movimientos_restantes_actual + 1:
+                        d.path = new_path
+                        d.path_index = 0
                  
                 tick_status[d.id] = Move.STILL.value
+
+        log = []
+        for d in self.drones:
+            log.append({
+                "drone": d.id,
+                "coor": self.orq.get_node_coor(d.curr_node),
+                "status": tick_status[d.id]
+            })
+        self.log[self.tick] = log
 
         turn_movements = []
         for d in self.drones:
@@ -102,9 +110,11 @@ class StateMachine:
                 turn_movements.append(f"D{d.id}-{d.curr_node}-{d.next_node}")
 
         if turn_movements:
-            print(" ".join(turn_movements))
+            self.txt_log.append(f"Tick {self.tick}: " + " ".join(turn_movements))
 
-
-    def export_history(self, filepath: str) -> None:
-        with open(filepath, 'w', encoding='utf-8') as f:
+    def export_history(self, json_path: str, txt_path: str) -> None:
+        with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(self.log, f, indent=4)
+        
+        with open(txt_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(self.txt_log))
