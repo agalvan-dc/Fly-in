@@ -1,18 +1,29 @@
 import colorsys
-from typing import Any
 import json
 import math
 import sys
+from typing import Any
 
 import pygame
 
 
 class Renderer:
+    """Render Pygame visual elements for the drone simulation playback."""
+
     def __init__(self,
                  width: int = 1024,
                  height: int = 768,
                  node_config: str = "data/map.json",
                  ticks: str = "data/log.json") -> None:
+        """
+        Initialize the Pygame renderer with network map data and tick logs.
+
+        Args:
+            width: Window width in pixels.
+            height: Window height in pixels.
+            node_config: Path to the JSON file containing hub and connection data.
+            ticks: Path to the JSON file containing simulation playback logs.
+        """
         try:
             with open(node_config, "r", encoding="utf-8") as f:
                 self.node_config = json.load(f)
@@ -45,6 +56,12 @@ class Renderer:
         self.font_large = pygame.font.Font(None, 36)
 
     def get_start_coor(self) -> tuple[float, float]:
+        """
+        Find the spatial coordinates of the starting node.
+
+        Returns:
+            A tuple containing (x, y) floating-point coordinates.
+        """
         for name, data in self.nodes.items():
             if name.lower() in ("start", "0", "start_node") or data.get("is_start"):
                 return tuple(data["coor"])
@@ -53,6 +70,7 @@ class Renderer:
         return (0.0, 0.0)
 
     def init_drone_colors(self) -> None:
+        """Assign distinct HSV-based colors to each drone based on ID."""
         all_drone_ids = set()
         for tick_data in self.ticks.values():
             for i, d in enumerate(tick_data):
@@ -67,6 +85,7 @@ class Renderer:
             self.drone_colors[d_id] = (int(r * 255), int(g * 255), int(b * 255))
 
     def inject_initial_state(self) -> None:
+        """Inject a synthetic frame 0 to smoothly transition drones from start."""
         start_coor = self.get_start_coor()
         min_k = min(int(k) for k in self.ticks.keys()) if self.ticks else 0
         synthetic_key = str(min_k - 1)
@@ -78,6 +97,13 @@ class Renderer:
         self.tick_keys = sorted(int(k) for k in self.ticks.keys())
 
     def compute_scale_and_offset(self, width: int, height: int) -> None:
+        """
+        Calculate resolution scaling factors and offsets to fit nodes on screen.
+
+        Args:
+            width: The window display width.
+            height: The window display height.
+        """
         if not self.nodes:
             return
 
@@ -99,9 +125,25 @@ class Renderer:
         self.offset_y = (height - (map_h * self.scale)) / 2 - (min_y * self.scale)
 
     def to_screen(self, x: float, y: float) -> tuple[float, float]:
+        """
+        Convert world coordinates to scaled screen coordinates.
+
+        Args:
+            x: World coordinate X.
+            y: World coordinate Y.
+
+        Returns:
+            A tuple of scaled screen coordinates (x, y).
+        """
         return x * self.scale + self.offset_x, y * self.scale + self.offset_y
 
     def handle_events(self) -> bool:
+        """
+        Handle user keyboard inputs for visualizer playback control.
+
+        Returns:
+            False if the window close or escape key is triggered, True otherwise.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -126,6 +168,15 @@ class Renderer:
         return True
 
     def update(self, dt: float) -> bool:
+        """
+        Update animation timeline progression based on elapsed delta time.
+
+        Args:
+            dt: Time elapsed since the last frame in seconds.
+
+        Returns:
+            Always returns True.
+        """
         dt = min(dt, 0.05)
 
         if self.is_playing:
@@ -141,12 +192,22 @@ class Renderer:
         return True
 
     def render_frame(self, window: pygame.Surface, dt: float) -> bool:
+        """
+        Render a single graphical frame to the Pygame window surface.
+
+        Args:
+            window: The active Pygame target surface.
+            dt: Delta time passed since the last render call.
+
+        Returns:
+            False if update fails, True otherwise.
+        """
         if not self.update(dt):
             return False
 
         window.fill((15, 15, 20))
 
-        # Conexiones
+        # Connections
         for conn_name in self.connections:
             parts = conn_name.split("-")
             if (len(parts) == 2 and parts[0]
@@ -157,7 +218,7 @@ class Renderer:
                 p2 = self.to_screen(c2[0], c2[1])
                 pygame.draw.line(window, (80, 100, 120), p1, p2, 4)
 
-        # Nodos
+        # Nodes
         for node_data in self.nodes.values():
             x, y = node_data["coor"]
             pos = self.to_screen(x, y)
@@ -235,6 +296,18 @@ class Renderer:
                      angle: float,
                      size: float = 15
                      ) -> list[tuple[float, float]]:
+        """
+        Generate coordinate vertices for a directional drone arrow polygon.
+
+        Args:
+            x: Center X coordinate.
+            y: Center Y coordinate.
+            angle: Heading angle in radians.
+            size: Scale factor for the arrow size.
+
+        Returns:
+            A list of (x, y) coordinate tuples representing arrow vertices.
+        """
         p_x = x + math.cos(angle) * size
         p_y = y + math.sin(angle) * size
         bl_x = x + math.cos(angle + math.radians(140)) * size

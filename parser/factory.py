@@ -7,12 +7,32 @@ from .processor import ConnectionProcessor, HubProcessor, Processor
 
 
 class Factory:
+    """Parse text configuration files and initialize hub and connection objects."""
+
     def __init__(self, filepath: str | None = None) -> None:
+        """
+        Initialize the parser factory.
+
+        Args:
+            filepath: Path to the raw text map file to process.
+        """
         self.nbr_drones: int = 0
         self.process_file(filepath)
 
     @staticmethod
     def _parse_restrictions(content: str) -> dict[str, Any]:
+        """
+        Extract bracketed key-value metadata parameters from a text line.
+
+        Args:
+            content: Raw string segment containing bracketed metadata.
+
+        Returns:
+            A dictionary containing parsed restriction key-value pairs.
+
+        Raises:
+            SyntaxError: If metadata format is invalid.
+        """
         match = re.search(r"\[(.*?)\]", content)
         if not match:
             return {}
@@ -26,6 +46,16 @@ class Factory:
         return restrictions
 
     def process_file(self, file_path: str | None = None) -> None:
+        """
+        Read and process lines from a map text file into domain objects.
+
+        Args:
+            file_path: Target file path to parse.
+
+        Raises:
+            SyntaxError: If file structure or line syntax is invalid.
+            ValueError: If numerical parameters are invalid.
+        """
         path = file_path or (sys.argv[1] if len(sys.argv) > 1 else None)
         if not path:
             print("Error: Not enough args. Use: <programa> <mapa.txt>")
@@ -88,6 +118,11 @@ class Factory:
                     except ValueError:
                         raise ValueError(f"Line {line_num}: Coor must be ints")
 
+                    if tag == "start_hub":
+                        restrictions["is_start"] = True
+                    elif tag == "end_hub":
+                        restrictions["is_end"] = True
+
                     if (tag in ("start_hub", "end_hub")
                        and "max_drones" not in restrictions):
                         restrictions["max_drones"] = self.nbr_drones
@@ -113,11 +148,20 @@ class Factory:
 
 
 class Linkers:
+    """Build topological network connections from processed map JSON data."""
+
     def __init__(self, filepath: str = "data/map.json") -> None:
+        """
+        Initialize Linkers and construct network topology output.
+
+        Args:
+            filepath: Path to the generated map JSON configuration file.
+        """
         self.filepath = filepath
         self.connections()
 
     def connections(self) -> None:
+        """Read map data and output an adjacency list network file."""
         net: dict[str, list[str]] = {}
 
         try:
@@ -146,5 +190,5 @@ class Linkers:
                 json.dump(net, f, indent=4)
             print(f"Network generated in: {output_path}")
         except OSError as e:
-            print(f"Error writing networkin file - {e}")
+            print(f"Error writing networking file - {e}")
             sys.exit(1)

@@ -8,6 +8,14 @@ from questionary import Choice, Separator, Style, select
 def print_animated(text: str,
                    ansi_code: str = "\033[1;32m",
                    delay: float = 0.05) -> None:
+    """
+    Print text to terminal character-by-character with an animation delay.
+
+    Args:
+        text: The string content to print.
+        ansi_code: ANSI escape sequence for formatting/color.
+        delay: Delay in seconds between each printed character.
+    """
     print(ansi_code, end="", flush=True)
     for char in text:
         print(char, end="", flush=True)
@@ -18,7 +26,14 @@ def print_animated(text: str,
 
 def loading(text: str | Exception,
             color_code: str = "\033[0m", delay: float = 0.03) -> None:
+    """
+    Display a animated loading text sequence on the current terminal line.
 
+    Args:
+        text: Text string or exception message to display.
+        color_code: ANSI escape sequence for styling.
+        delay: Delay in seconds between characters.
+    """
     print(f"\r\033[2K{color_code}", end="", flush=True)
 
     for char in str(text):
@@ -30,6 +45,7 @@ def loading(text: str | Exception,
 
 
 def print_frames() -> None:
+    """Animate a terminal loading screen sequence with frame transitions."""
     frames = [
         "Toolbar Loading [o     ]",
         "Toolbar Loading [ o    ]",
@@ -128,6 +144,12 @@ def print_frames() -> None:
 
 
 def print_maps() -> str:
+    """
+    Prompt user with an interactive terminal menu to select a simulation map.
+
+    Returns:
+        The selected map text file path, or an empty string if cancelled.
+    """
     blue_style = Style([
         ('question', 'fg:ansiblue bold'),
         ('pointer', 'fg:ansiblue bold'),
@@ -150,7 +172,11 @@ def print_maps() -> str:
         Choice(title="01_maze_nightmare",     value="hard/01_maze_nightmare"),
         Choice(title="02_capacity_hell",      value="hard/02_capacity_hell"),
         Choice(title="03_ultimate_challenge", value="hard/03_ultimate_challenge"),
-        ]
+    
+        Separator("=== Challenger ==="),
+        Choice(title="01_the_impossible_dream",
+               value="challenger/01_the_impossible_dream"),
+    ]
 
     selected_route = select(
         "Map selection",
