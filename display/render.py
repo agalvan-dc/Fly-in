@@ -7,8 +7,8 @@ class Display:
     """Initialize and maintain the main visualizer application window."""
 
     def __init__(self,
-                 width: int = 1024,
-                 height: int = 768,
+                 width: int = 2048,
+                 height: int = 1446,
                  node_config: str = "data/map.json",
                  ticks: str = "data/log.json") -> None:
         """

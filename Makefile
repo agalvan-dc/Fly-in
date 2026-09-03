@@ -1,6 +1,5 @@
 IMAGE_NAME = fly-in-image
 CONTAINER_NAME = fly-in-dev
-MAP_DIR = mapas/
 MAP ?=
 
 # 1. Detect OS to set the correct GUI Docker arguments
@@ -48,7 +47,6 @@ lint-strict:
 
 clean:
 	@echo "Cleaning cache files (resolving Docker root permissions)..."
-	@docker run --rm -v "$$(pwd):/app:z" -w /app python:3.12-slim bash -c "find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true"
 	@echo "Cleaning local files and JSON configurations..."
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -58,7 +56,7 @@ clean:
 	@echo "Cleaning Docker environment..."
 	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rmi -f $(IMAGE_NAME) 2>/dev/null || true
-	@docker rmi -f python:3.12-slim 2>/dev/null || true
 	@docker image prune -f
+	@echo "\e[1;32mDocker and residues cleaned\e[0m"	
 
 .PHONY: build run shell debug lint lint-strict clean

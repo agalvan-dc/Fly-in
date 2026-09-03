@@ -90,7 +90,7 @@ class HubProcessor(BaseModel, Processor):
         Raises:
             ValueError: If capacity or zone parameters are invalid.
         """
-        if self.color is not None:
+        if self.color is not None and self.color != "rainbow":
             try:
                 pygame.Color(self.color)
             except ValueError:

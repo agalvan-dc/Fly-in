@@ -1,10 +1,26 @@
 import colorsys
 import json
 import math
+import random
 import sys
 from typing import Any
 
 import pygame
+
+
+def random_color() -> int:
+    """Generate a random opaque RGB color.
+
+    Returns:
+        A 32-bit ARGB color.
+    """
+    r = random.randint(100, 255)
+    g = random.randint(100, 255)
+    b = random.randint(100, 255)
+
+    return (0xFF << 24) | (r << 16) | (g << 8) | b
+
+
 
 
 class Renderer:
@@ -191,7 +207,7 @@ class Renderer:
                     break
         return True
 
-    def render_frame(self, window: pygame.Surface, dt: float) -> bool:
+    def render_frame(self, window: pygame.surface.Surface, dt: float) -> bool:
         """
         Render a single graphical frame to the Pygame window surface.
 
@@ -223,7 +239,10 @@ class Renderer:
             x, y = node_data["coor"]
             pos = self.to_screen(x, y)
             color = node_data.get("color", (100, 150, 200))
-            pygame.draw.circle(window, color, pos, 20)
+            if color != "rainbow":
+                pygame.draw.circle(window, color, pos, 20)
+            else:
+                pygame.draw.circle(window, random_color(), pos, 20)
             pygame.draw.circle(window, (255, 255, 255), pos, 20, 2)
 
         # Drones

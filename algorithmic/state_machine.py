@@ -97,7 +97,7 @@ class StateMachine:
             self.tick += 1
             self.simulate_tick()
 
-        print(f"\033[32;1mSim ended in {self.tick} turns\033[0m")
+        print(f"\033[32;1m  Sim ended in {self.tick} turns\033[0m")
         self.export_history("data/log.json", "data/movements.txt")
 
     def simulate_tick(self) -> None:
