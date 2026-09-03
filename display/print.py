@@ -172,7 +172,7 @@ def print_maps() -> str:
         Choice(title="01_maze_nightmare",     value="hard/01_maze_nightmare"),
         Choice(title="02_capacity_hell",      value="hard/02_capacity_hell"),
         Choice(title="03_ultimate_challenge", value="hard/03_ultimate_challenge"),
-    
+
         Separator("=== Challenger ==="),
         Choice(title="01_the_impossible_dream",
                value="challenger/01_the_impossible_dream"),

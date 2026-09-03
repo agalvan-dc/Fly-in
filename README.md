@@ -375,10 +375,10 @@ During execution, movements are logged per simulation tick following the subject
 **Terminal / Plain Text Output (`data/movements.txt`)**:
 
 ```text
-Tick 1: D0-corridorA D1-corridorA D2-roof1
-Tick 2: D0-goal D1-goal D2-roof1-roof2
-Tick 3: D2-roof2 D3-corridorA D4-corridorA
-Tick 4: D2-goal D3-goal D4-goal
+D0-corridorA D1-corridorA D2-roof1
+D0-goal D1-goal D2-roof1-roof2
+D2-roof2 D3-corridorA D4-corridorA
+D2-goal D3-goal D4-goal
 
 ```
 

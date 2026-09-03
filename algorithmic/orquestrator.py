@@ -33,7 +33,7 @@ class Orchestrator:
         """
         Calculate the shortest valid path between two nodes using BFS.
 
-        Pathfinding avoids restricted nodes and prioritizes nodes located 
+        Pathfinding avoids restricted nodes and prioritizes nodes located
         in a priority zone.
 
         Args:
@@ -42,7 +42,7 @@ class Orchestrator:
             restricted_nodes: A set of node identifiers to avoid.
 
         Returns:
-            A list of node identifiers representing the shortest path, 
+            A list of node identifiers representing the shortest path,
             or an empty list if no valid path exists.
         """
         if start_node in restricted_nodes or goal_node in restricted_nodes:

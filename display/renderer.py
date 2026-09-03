@@ -21,8 +21,6 @@ def random_color() -> int:
     return (0xFF << 24) | (r << 16) | (g << 8) | b
 
 
-
-
 class Renderer:
     """Render Pygame visual elements for the drone simulation playback."""
 

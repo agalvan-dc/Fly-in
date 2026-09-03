@@ -39,7 +39,7 @@ class StateMachine:
         self.congestion: dict[str, float] = {}
         self.run()
 
-    def _resolve_node(self, is_start: bool) -> str:
+    def _resolve_node(self, is_start: bool) -> Any:
         """
         Dynamically determine the start or goal node identifier from map metadata.
 
@@ -80,13 +80,16 @@ class StateMachine:
         forced_avoid = forced_avoid or set()
         path = self.orq.get_shortest_valid_path(curr_node, "goal", forced_avoid)
         if not path:
-            return path 
+            return path
         hotspots = {n for n in path
-                    if self.congestion.get(n, 0) >= self.orq.get_node_capacity(n)} - forced_avoid
+                    if self.congestion.get(n, 0)
+                    >= self.orq.get_node_capacity(n)} - forced_avoid
 
         if not hotspots:
             return path
-        detour = self.orq.get_shortest_valid_path(curr_node, "goal", forced_avoid | hotspots)
+        detour = self.orq.get_shortest_valid_path(curr_node,
+                                                  "goal",
+                                                  forced_avoid | hotspots)
         if detour and len(detour) <= len(path) + 2:
             return detour
         return path
@@ -187,7 +190,7 @@ class StateMachine:
                 turn_movements.append(f"D{d.id}-{d.curr_node}-{d.next_node}")
 
         if turn_movements:
-            self.txt_log.append(f"Tick {self.tick}: " + " ".join(turn_movements))
+            self.txt_log.append(" ".join(turn_movements))
 
     def export_history(self, json_path: str, txt_path: str) -> None:
         """

@@ -40,7 +40,7 @@ debug:
 		$(IMAGE_NAME) poetry run python -m pdb fly-in.py $(MAP)
 
 lint:
-	docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v "$$(pwd):/app:z" $(IMAGE_NAME) bash -c "flake8 . && mypy ."
+	docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v "$$(pwd):/app:z" $(IMAGE_NAME) bash -c "flake8 . && mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs"
 
 lint-strict:
 	docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v "$$(pwd):/app:z" $(IMAGE_NAME) bash -c "flake8 . && mypy . --strict"
