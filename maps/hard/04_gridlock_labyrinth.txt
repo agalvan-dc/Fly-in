@@ -1,0 +1,38 @@
+# Hard Level 4: Dense grid network with tight link and node capacities
+nb_drones: 10
+
+start_hub: start 0 0 [color=green]
+
+hub: node_1_1 1 1 [color=blue max_drones=2]
+hub: node_1_0 1 0 [color=orange max_drones=1]
+hub: node_1_m1 1 -1 [color=blue max_drones=2]
+
+hub: node_2_1 2 1 [color=purple max_drones=2]
+hub: node_2_0 2 0 [zone=restricted color=red max_drones=1]
+hub: node_2_m1 2 -1 [color=purple max_drones=2]
+
+hub: node_3_1 3 1 [zone=priority color=cyan max_drones=2]
+hub: node_3_0 3 0 [color=orange max_drones=1]
+hub: node_3_m1 3 -1 [zone=priority color=cyan max_drones=2]
+
+end_hub: goal 4 0 [color=green]
+
+connection: start-node_1_1 [max_link_capacity=2]
+connection: start-node_1_0 [max_link_capacity=1]
+connection: start-node_1_m1 [max_link_capacity=2]
+
+connection: node_1_1-node_1_0
+connection: node_1_m1-node_1_0
+connection: node_1_1-node_2_1 [max_link_capacity=1]
+connection: node_1_0-node_2_0 [max_link_capacity=1]
+connection: node_1_m1-node_2_m1 [max_link_capacity=1]
+
+connection: node_2_1-node_2_0
+connection: node_2_m1-node_2_0
+connection: node_2_1-node_3_1
+connection: node_2_0-node_3_0
+connection: node_2_m1-node_3_m1
+
+connection: node_3_1-goal [max_link_capacity=2]
+connection: node_3_0-goal [max_link_capacity=1]
+connection: node_3_m1-goal [max_link_capacity=2]

@@ -1,0 +1,39 @@
+# Hard Level 5: Layered hazard zones and capacity traps
+nb_drones: 12
+
+start_hub: start 0 0 [color=green]
+
+hub: layer1_a 1 2 [zone=priority color=cyan max_drones=2]
+hub: layer1_b 1 0 [color=yellow max_drones=3]
+hub: layer1_c 1 -2 [zone=restricted color=red max_drones=4]
+
+hub: trap_dead1 2 3 [color=red]
+hub: layer2_a 2 1 [color=blue max_drones=2]
+hub: layer2_b 2 -1 [color=blue max_drones=2]
+
+hub: choke 3 0 [color=orange max_drones=2]
+hub: bypass1 3 2 [zone=restricted color=brown max_drones=2]
+hub: bypass2 4 2 [zone=restricted color=brown max_drones=2]
+
+hub: exit_gate 4 0 [zone=priority color=lime max_drones=3]
+
+end_hub: goal 5 0 [color=gold]
+
+connection: start-layer1_a [max_link_capacity=2]
+connection: start-layer1_b [max_link_capacity=2]
+connection: start-layer1_c [max_link_capacity=3]
+
+connection: layer1_a-trap_dead1
+connection: layer1_a-layer2_a
+connection: layer1_b-layer2_a
+connection: layer1_b-layer2_b
+connection: layer1_c-layer2_b
+
+connection: layer2_a-choke [max_link_capacity=1]
+connection: layer2_b-choke [max_link_capacity=1]
+connection: layer2_a-bypass1
+connection: bypass1-bypass2
+connection: bypass2-exit_gate
+
+connection: choke-exit_gate [max_link_capacity=2]
+connection: exit_gate-goal [max_link_capacity=2]

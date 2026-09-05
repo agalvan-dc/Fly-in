@@ -1,0 +1,12 @@
+# Easy Level 4: Two parallel lanes for basic traffic splitting
+nb_drones: 4
+
+start_hub: start 0 0 [color=green]
+hub: lane_top 1 1 [color=blue max_drones=2]
+hub: lane_bottom 1 -1 [color=blue max_drones=2]
+end_hub: goal 2 0 [color=red]
+
+connection: start-lane_top [max_link_capacity=2]
+connection: start-lane_bottom [max_link_capacity=2]
+connection: lane_top-goal
+connection: lane_bottom-goal

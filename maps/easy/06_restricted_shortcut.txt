@@ -1,0 +1,14 @@
+# Easy Level 6: Choice between slow direct route and longer normal route
+nb_drones: 4
+
+start_hub: start 0 0 [color=green]
+hub: slow_shortcut 1 0 [zone=restricted color=orange max_drones=2]
+hub: long_path1 1 2 [color=blue]
+hub: long_path2 2 2 [color=blue]
+end_hub: goal 3 0 [color=red]
+
+connection: start-slow_shortcut
+connection: start-long_path1
+connection: slow_shortcut-goal
+connection: long_path1-long_path2
+connection: long_path2-goal

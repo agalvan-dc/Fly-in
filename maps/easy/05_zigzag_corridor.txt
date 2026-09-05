@@ -1,0 +1,13 @@
+# Easy Level 5: Winding corridor testing sequential node transitions
+nb_drones: 3
+
+start_hub: start 0 0 [color=green]
+hub: corner1 1 1 [color=yellow max_drones=2]
+hub: corner2 2 0 [color=yellow max_drones=2]
+hub: corner3 3 1 [color=yellow max_drones=2]
+end_hub: goal 4 0 [color=red]
+
+connection: start-corner1
+connection: corner1-corner2
+connection: corner2-corner3
+connection: corner3-goal

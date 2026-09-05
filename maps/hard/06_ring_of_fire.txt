@@ -1,0 +1,37 @@
+# Hard Level 6: Concentric loops with restricted outer ring and priority core
+nb_drones: 14
+
+start_hub: start 0 0 [color=green]
+
+hub: in_1 1 1 [color=blue max_drones=3]
+hub: in_2 1 -1 [color=blue max_drones=3]
+
+hub: out_top 2 2 [zone=restricted color=red max_drones=4]
+hub: out_mid 3 2 [zone=restricted color=red max_drones=4]
+hub: out_bot 2 -2 [zone=restricted color=red max_drones=4]
+
+hub: core_a 2 0 [zone=priority color=cyan max_drones=1]
+hub: core_b 3 0 [zone=priority color=cyan max_drones=1]
+
+hub: out_exit 4 1 [color=orange max_drones=3]
+hub: core_exit 4 -1 [color=orange max_drones=2]
+
+end_hub: goal 5 0 [color=green]
+
+connection: start-in_1 [max_link_capacity=3]
+connection: start-in_2 [max_link_capacity=3]
+
+connection: in_1-out_top
+connection: out_top-out_mid
+connection: out_mid-out_exit
+
+connection: in_2-out_bot
+connection: out_bot-out_exit
+
+connection: in_1-core_a [max_link_capacity=1]
+connection: in_2-core_a [max_link_capacity=1]
+connection: core_a-core_b [max_link_capacity=1]
+connection: core_b-core_exit [max_link_capacity=1]
+
+connection: out_exit-goal [max_link_capacity=2]
+connection: core_exit-goal [max_link_capacity=2]

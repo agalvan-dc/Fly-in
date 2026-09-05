@@ -1,0 +1,20 @@
+# Medium Level 6: High speed priority route with tight capacity vs wide route
+nb_drones: 7
+
+start_hub: start 0 0 [color=green]
+hub: split 1 0 [color=yellow max_drones=3]
+hub: prio_1 2 1 [zone=priority color=cyan max_drones=1]
+hub: prio_2 3 1 [zone=priority color=cyan max_drones=1]
+hub: norm_1 2 -1 [color=blue max_drones=3]
+hub: norm_2 3 -1 [color=blue max_drones=3]
+hub: merge 4 0 [color=yellow max_drones=4]
+end_hub: goal 5 0 [color=green]
+
+connection: start-split [max_link_capacity=3]
+connection: split-prio_1
+connection: prio_1-prio_2
+connection: prio_2-merge
+connection: split-norm_1 [max_link_capacity=2]
+connection: norm_1-norm_2 [max_link_capacity=2]
+connection: norm_2-merge [max_link_capacity=2]
+connection: merge-goal [max_link_capacity=3]

@@ -1,0 +1,21 @@
+# Medium Level 5: Central roundabout with restricted bypasses
+nb_drones: 6
+
+start_hub: start 0 0 [color=green]
+hub: entry 1 0 [color=yellow max_drones=2]
+hub: circle_n 2 1 [color=blue max_drones=2]
+hub: circle_e 3 0 [color=blue max_drones=2]
+hub: circle_s 2 -1 [color=blue max_drones=2]
+hub: circle_w 2 0 [color=blue max_drones=2]
+hub: bypass 2 2 [zone=restricted color=red]
+end_hub: goal 4 0 [color=green]
+
+connection: start-entry
+connection: entry-circle_w
+connection: circle_w-circle_n
+connection: circle_n-circle_e
+connection: circle_e-circle_s
+connection: circle_s-circle_w
+connection: entry-bypass
+connection: bypass-circle_e
+connection: circle_e-goal [max_link_capacity=2]

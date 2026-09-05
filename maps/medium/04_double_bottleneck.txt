@@ -1,0 +1,16 @@
+# Medium Level 4: Sequential bottlenecks with an intermediate buffer
+nb_drones: 6
+
+start_hub: start 0 0 [color=green]
+hub: neck1 1 0 [color=orange max_drones=1]
+hub: buffer 2 0 [color=blue max_drones=3]
+hub: neck2 3 0 [color=orange max_drones=1]
+hub: side_bypass 2 1 [zone=restricted color=red max_drones=2]
+end_hub: goal 4 0 [color=green]
+
+connection: start-neck1 [max_link_capacity=1]
+connection: start-side_bypass
+connection: neck1-buffer
+connection: side_bypass-neck2
+connection: buffer-neck2 [max_link_capacity=1]
+connection: neck2-goal
