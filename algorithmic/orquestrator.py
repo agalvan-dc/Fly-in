@@ -68,14 +68,14 @@ class Orchestrator:
                     queue.append(curr_path + [neighbour])
         return []
 
-    def get_nb_drones(self) -> Any:
+    def get_nb_drones(self, start_node: str = "start") -> Any:
         """
         Retrieve the total number of drones based on the start node capacity.
 
         Returns:
             The maximum number of drones the start node can hold.
         """
-        return self.get_node_capacity("start")
+        return self.get_node_capacity(start_node)
 
     def get_node_capacity(self, node_name: str) -> Any:
         """

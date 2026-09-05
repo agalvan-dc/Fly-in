@@ -5,8 +5,16 @@ MAP ?=
 # 1. Detect OS to set the correct GUI Docker arguments
 OS := $(shell uname -s)
 
+XAUTH ?= $(HOME)/.Xauthority
+
 ifeq ($(OS),Linux)
-	GUI_ARGS = -e DISPLAY=$$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -e XDG_RUNTIME_DIR=/tmp -e LIBGL_ALWAYS_SOFTWARE=1 --security-opt label=disable
+    GUI_ARGS = -e DISPLAY=$(DISPLAY) \
+               -v /tmp/.X11-unix:/tmp/.X11-unix \
+               -v $(XAUTH):/root/.Xauthority:ro \
+               -e XAUTHORITY=/root/.Xauthority \
+               -e XDG_RUNTIME_DIR=/tmp \
+               -e LIBGL_ALWAYS_SOFTWARE=1 \
+               --security-opt label=disable
 
 else ifeq ($(OS),Darwin)
 	# macOS
@@ -17,11 +25,12 @@ else
 endif
 
 build:
-	docker build -t $(IMAGE_NAME) .
+	@docker build -t $(IMAGE_NAME) .
+	@echo -e "\e[1;32mDocker image mounted\e[0m"
 
 run:
 	@echo "Detected OS: $(OS)."
-	docker run --rm -it \
+	@docker run --rm -it \
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		-e PYGAME_HIDE_SUPPORT_PROMPT=1 \
 		$(GUI_ARGS) \
@@ -57,6 +66,6 @@ clean:
 	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rmi -f $(IMAGE_NAME) 2>/dev/null || true
 	@docker image prune -f
-	@echo "\e[1;32mDocker and residues cleaned\e[0m"	
+	@echo -e "\e[1;32mDocker and residues cleaned\e[0m"	
 
 .PHONY: build run shell debug lint lint-strict clean

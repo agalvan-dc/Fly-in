@@ -78,7 +78,7 @@ class StateMachine:
     def _plan_path(self, curr_node: str,
                    forced_avoid: set[str] | None = None) -> list[str]:
         forced_avoid = forced_avoid or set()
-        path = self.orq.get_shortest_valid_path(curr_node, "goal", forced_avoid)
+        path = self.orq.get_shortest_valid_path(curr_node, self.goal_node, forced_avoid)
         if not path:
             return path
         hotspots = {n for n in path
@@ -88,7 +88,7 @@ class StateMachine:
         if not hotspots:
             return path
         detour = self.orq.get_shortest_valid_path(curr_node,
-                                                  "goal",
+                                                  self.goal_node,
                                                   forced_avoid | hotspots)
         if detour and len(detour) <= len(path) + 2:
             return detour
@@ -128,6 +128,7 @@ class StateMachine:
                 d.transit_turns -= 1
                 if d.transit_turns == 0:
                     d.advance()
+                    curr_node_usage[d.curr_node] += 1
                     tick_status[d.id] = Move.MOVE.value
                 else:
                     tick_status[d.id] = Move.CONNEC.value
