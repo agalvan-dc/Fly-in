@@ -1,7 +1,7 @@
 import json
 import sys
-from typing import Any
 from collections import deque
+from typing import Any
 
 from .processor import ConnectionProcessor, HubProcessor, Processor
 

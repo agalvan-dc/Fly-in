@@ -26,7 +26,7 @@ endif
 
 build:
 	@docker build -t $(IMAGE_NAME) .
-	@echo -e "\e[1;32mDocker image mounted\e[0m"
+	@echo "\e[1;32mDocker image mounted\e[0m"
 
 run:
 	@echo "Detected OS: $(OS)."
@@ -66,6 +66,6 @@ clean:
 	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rmi -f $(IMAGE_NAME) 2>/dev/null || true
 	@docker image prune -f
-	@echo -e "\e[1;32mDocker and residues cleaned\e[0m"	
+	@echo "\e[1;32mDocker and residues cleaned\e[0m"	
 
 .PHONY: build run shell debug lint lint-strict clean
