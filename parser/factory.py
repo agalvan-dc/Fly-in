@@ -1,6 +1,7 @@
 import json
 import sys
 from typing import Any
+from collections import deque
 
 from .processor import ConnectionProcessor, HubProcessor, Processor
 
@@ -16,6 +17,8 @@ class Factory:
             filepath: Path to the raw text map file to process.
         """
         self.nbr_drones: int = 0
+        self.seen_hubs: set[str] = set()
+        self.seen_connections: set[str] = set()
         self.process_file(filepath)
 
     def process_file(self, file_path: str | None = None) -> None:
@@ -27,8 +30,7 @@ class Factory:
 
         Raises:
             SyntaxError: If file structure or line syntax is invalid.
-            ValueError: If numerical parameters are invalid or path is missing.
-            OSError: If the file cannot be opened.
+            ValueError: If numerical parameters are invalid, path is missing, or duplicates are found.
         """
         path = file_path or (sys.argv[1] if len(sys.argv) > 1 else None)
         if not path:
@@ -40,9 +42,10 @@ class Factory:
         nb_drones_parsed = False
 
         for line_num, line in enumerate(lines, 1):
-            clean_line = line.strip()
+            # Remove inline comments
+            clean_line = line.split('#')[0].strip()
 
-            if not clean_line or clean_line.startswith("#"):
+            if not clean_line:
                 continue
 
             if not nb_drones_parsed:
@@ -92,12 +95,18 @@ class Factory:
                 if len(base_tokens) != 3:
                     raise SyntaxError(f"Line {line_num}: Hub format must be '<name> <x> <y>'")
                 
+                name, x_str, y_str = base_tokens
+                
+                # Validate duplicate hubs
+                if name in self.seen_hubs:
+                    raise ValueError(f"Line {line_num}: Duplicate hub detected '{name}'")
+                self.seen_hubs.add(name)
+
                 allowed_hub_keys = {"color", "max_drones", "zone", "is_start", "is_end"}
                 for k in restrictions:
                     if k not in allowed_hub_keys:
                         raise SyntaxError(f"Line {line_num}: Unrecognised hub key '{k}'")
 
-                name, x_str, y_str = base_tokens
                 if not (x_str.lstrip('-').isdigit() and y_str.lstrip('-').isdigit()):
                     raise ValueError(f"Line {line_num}: Coordinates must be integers")
                 
@@ -116,13 +125,20 @@ class Factory:
             elif tag == "connection":
                 if len(base_tokens) != 1:
                     raise SyntaxError(f"Line {line_num}: Invalid Connection format")
+                
+                conn_name = base_tokens[0]
+                
+                # Validate duplicate connections
+                if conn_name in self.seen_connections:
+                    raise ValueError(f"Line {line_num}: Duplicate connection detected '{conn_name}'")
+                self.seen_connections.add(conn_name)
 
                 allowed_conn_keys = {"max_link_capacity"}
                 for k in restrictions:
                     if k not in allowed_conn_keys:
                         raise SyntaxError(f"Line {line_num}: Unrecognised connection key '{k}'")
 
-                ConnectionProcessor(name=base_tokens[0], **restrictions)
+                ConnectionProcessor(name=conn_name, **restrictions)
             else:
                 raise SyntaxError(f"Line {line_num}: Forbidden tag '{tag}'")
 
@@ -146,23 +162,67 @@ class Linkers:
         self.connections()
 
     def connections(self) -> None:
-        """Read map data and output an adjacency list network file."""
+        """
+        Read map data, validate pathways, and output an adjacency list network file.
+
+        Raises:
+            ValueError: If connections reference nonexistent hubs, or if no valid path exists to the end hub.
+        """
         net: dict[str, list[str]] = {}
 
         with open(self.filepath, 'r', encoding='utf-8') as file:
             data = json.load(file)
+            
+        hubs = data.get('Hub', {})
+        connections = data.get('Connections', {})
+        
+        start_nodes = []
+        end_nodes = []
+        
+        # Identify start and end nodes
+        for h_name, h_data in hubs.items():
+            if h_data.get('is_start'):
+                start_nodes.append(h_name)
+            if h_data.get('is_end'):
+                end_nodes.append(h_name)
 
-        for name in data.get('Hub', {}):
+        for name in hubs:
             linked_hubs = set()
 
-            for conec in data.get('Connections', {}).keys():
+            for conec in connections.keys():
                 split_conec = conec.split('-')
+                
+                # Ensure connection nodes exist in the map
+                if split_conec[0] not in hubs or split_conec[1] not in hubs:
+                    raise ValueError(f"Invalid connection: '{conec}' references a non-existent hub.")
 
                 if name in split_conec:
                     neighbor = split_conec[0] if split_conec[0] != name else split_conec[1]
                     linked_hubs.add(neighbor)
 
             net[name] = list(linked_hubs)
+            
+        # Check if goal is reachable using BFS
+        if start_nodes and end_nodes:
+            reachable = False
+            for start in start_nodes:
+                visited = set()
+                queue = deque([start])
+                while queue:
+                    curr = queue.popleft()
+                    if curr in end_nodes:
+                        reachable = True
+                        break
+                    if curr not in visited:
+                        visited.add(curr)
+                        queue.extend(net.get(curr, []))
+                if reachable:
+                    break
+            
+            if not reachable:
+                raise ValueError("Validation failed: No valid path exists to reach the end_hub.")
+        else:
+            raise ValueError("Incomplete configuration: Missing at least one start_hub or end_hub.")
 
         output_path = "data/network.json"
         with open(output_path, 'w', encoding='utf-8') as f:
