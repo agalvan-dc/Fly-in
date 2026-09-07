@@ -42,7 +42,6 @@ class Factory:
         nb_drones_parsed = False
 
         for line_num, line in enumerate(lines, 1):
-            # Remove inline comments
             clean_line = line.split('#')[0].strip()
 
             if not clean_line:
@@ -117,7 +116,11 @@ class Factory:
                 elif tag == "end_hub":
                     restrictions["is_end"] = True
 
-                if tag in ("start_hub", "end_hub") and "max_drones" not in restrictions:
+                # MODIFICACIÓN APLICADA AQUÍ: 
+                # Lanza error si se intenta definir explícitamente max_drones en start_hub o end_hub
+                if tag in ("start_hub", "end_hub"):
+                    if "max_drones" in restrictions:
+                        raise ValueError(f"Line {line_num}: 'max_drones' cannot be explicitly set for {tag}. It is automatically set to the total 'nb_drones'.")
                     restrictions["max_drones"] = self.nbr_drones
 
                 HubProcessor(name=name, coor=coor, **restrictions)
@@ -178,8 +181,8 @@ class Linkers:
         
         start_nodes = []
         end_nodes = []
-        
-        # Identify start and end nodes
+
+
         for h_name, h_data in hubs.items():
             if h_data.get('is_start'):
                 start_nodes.append(h_name)
@@ -201,8 +204,7 @@ class Linkers:
                     linked_hubs.add(neighbor)
 
             net[name] = list(linked_hubs)
-            
-        # Check if goal is reachable using BFS
+
         if start_nodes and end_nodes:
             reachable = False
             for start in start_nodes:
@@ -228,3 +230,5 @@ class Linkers:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(net, f, indent=4)
         print(f"Network generated in: {output_path}")
+
+

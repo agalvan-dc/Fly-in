@@ -2,7 +2,7 @@ IMAGE_NAME = fly-in-image
 CONTAINER_NAME = fly-in-dev
 MAP ?=
 
-# 1. Detect OS to set the correct GUI Docker arguments
+
 OS := $(shell uname -s)
 
 XAUTH ?= $(HOME)/.Xauthority
@@ -17,10 +17,8 @@ ifeq ($(OS),Linux)
                --security-opt label=disable
 
 else ifeq ($(OS),Darwin)
-	# macOS
 	GUI_ARGS = -e DISPLAY=host.docker.internal:0
-else
-	# Windows (Git Bash / MinGW)
+else	
 	GUI_ARGS = -e DISPLAY=host.docker.internal:0.0
 endif
 
