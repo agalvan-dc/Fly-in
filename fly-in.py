@@ -88,7 +88,7 @@ def main() -> None:
                 console.print(f"[bold red]Display error:[/bold red] {e}")
                 sys.exit(1)
     except KeyboardInterrupt:
-            sys.exit("Keyboard Interrupted")
+        sys.exit("Keyboard Interrupted")
 
 
 if __name__ == "__main__":

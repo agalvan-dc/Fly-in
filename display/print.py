@@ -164,7 +164,7 @@ def print_maps() -> str:
         Choice(title="03_basic_capacity",   value="easy/03_basic_capacity"),
         Choice(title="04_parallel_lanes",   value="easy/04_parallel_lanes"),
         Choice(title="05_zigzag_corridor",  value="easy/05_zigzag_corridor"),
-        Choice(title="06_restricted_shortcut",  
+        Choice(title="06_restricted_shortcut",
                value="easy/06_restricted_shortcut"),
 
         Separator("\n    === Medium ==="),
