@@ -2,6 +2,14 @@
 
 # Fly-In: Autonomous Drone Swarm Fleet Routing & Simulation Engine
 
+<div align="center">
+  <img src="data/simulation.gif" alt="Drone simulation Demo" width="600"/>
+</div>
+
+<div align="center">
+<i>Fly in 42</i>
+</div>
+
 ## Table of Contents
 1. [Description](#description)
 2. [Theoretical Foundations & Algorithmic Architecture](#theoretical-foundations--algorithmic-architecture)

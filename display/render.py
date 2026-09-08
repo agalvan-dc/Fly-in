@@ -21,7 +21,7 @@ class Display:
             ticks: Path to the JSON file containing simulation history.
         """
         pygame.init()
-        pygame.display.set_caption("Drone Simulation Visualizer")
+        pygame.display.set_caption("Fly-in - Drone visualizer")
         window = pygame.display.set_mode((width, height))
 
         self.renderer = Renderer(width=width,
