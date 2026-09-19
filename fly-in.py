@@ -13,17 +13,19 @@ from parser import parser
 def main() -> None:
 
     try:
-        sys.stdout.write("\033[H\033[J")
         console = Console()
+        console.clear()
         if len(sys.argv) == 1:
             print_animated("Welcome to the drone simulation...")
             print_frames()
             option = input()
             while option != "2":
+                console.clear()
                 match option:
                     case "1":
                         loading("Select map: ")
                         filepath = print_maps()
+                        console.clear()
                         loading("Parsing...")
                         print()
                         sleep(0.2)
@@ -43,9 +45,9 @@ def main() -> None:
                         loading("Displaying...")
                         try:
                             Display()
+                            console.clear()
                             loading("Display ended. Choose again: ")
                             option = input()
-                            sys.stdout.write("\033[H\033[J")
                         except OSError as e:
                             loading(e, "\033[1;31m")
                             sys.exit(1)

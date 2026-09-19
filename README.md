@@ -214,7 +214,6 @@ stateDiagram-v2
 
     DecrementTransit --> AdvanceNode : transit_turns == 0
     AdvanceNode --> GoalNode : Arrived at end_hub
-    AdvanceNode --> Evaluation : More Nodes in Path
 
     GoalNode --> [*] : Delivered (Removed from active tracking)
 
@@ -243,7 +242,7 @@ Key concepts leveraged in this project's `Dockerfile`:
 
 Because Pygame requires an active display server to render GUI windows, running it inside an isolated Docker container requires **X11 Display Forwarding**:
 
-* **Linux**: Mounts the host UNIX domain socket `/tmp/.X11-unix` into the container and passes the host `DISPLAY` environment variable (`-e DISPLAY=$DISPLAY`). Software OpenGL rendering (`LIBGL_ALWAYS_SOFTWARE=1`) ensures compatibility across GPU drivers.
+* **Linux**: Mounts the host UNIX domain socket `/tmp/.X11-unix` into the container and passes the host `DISPLAY` and `XAUTHORITY` environment variables. The container runs with the same user ID as the host (`--user $(id -u):$(id -g)`), so the X server accepts the connection through its default local-user access control — no `xhost +local:` required. Software OpenGL rendering (`LIBGL_ALWAYS_SOFTWARE=1`) ensures compatibility across GPU drivers.
 * **macOS / Windows**: Routes display commands through `host.docker.internal:0` (or `:0.0`) to communicate with host X11 servers such as **XQuartz** (macOS) or **VcXsrv** (Windows).
 
 ### Makefile Targets Explained

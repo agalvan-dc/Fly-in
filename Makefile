@@ -9,9 +9,11 @@ XAUTH ?= $(HOME)/.Xauthority
 
 ifeq ($(OS),Linux)
     GUI_ARGS = -e DISPLAY=$(DISPLAY) \
+               -e XAUTHORITY=/tmp/.Xauthority \
+               -e POETRY_CACHE_DIR=/tmp/poetry-cache \
                -v /tmp/.X11-unix:/tmp/.X11-unix \
-               -v $(XAUTH):/root/.Xauthority:ro \
-               -e XAUTHORITY=/root/.Xauthority \
+               -v "$(XAUTH):/tmp/.Xauthority:ro" \
+               --user $$(id -u):$$(id -g) \
                -e XDG_RUNTIME_DIR=/tmp \
                -e LIBGL_ALWAYS_SOFTWARE=1 \
                --security-opt label=disable

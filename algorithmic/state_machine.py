@@ -36,7 +36,6 @@ class StateMachine:
         self.tick = 0
         self.log: dict[int, Any] = {}
         self.txt_log: list[str] = []
-        self.congestion: dict[str, float] = {}
         self.run()
 
     def _resolve_node(self, is_start: bool) -> Any:
@@ -66,34 +65,6 @@ class StateMachine:
             return hub_keys[0] if is_start else hub_keys[-1]
         return "start" if is_start else "goal"
 
-    def _register_block(self, node: str) -> None:
-        self.congestion[node] = self.congestion.get(node, 0) + 1
-
-    def _decay_congestion(self) -> None:
-        for node in list(self.congestion):
-            self.congestion[node] *= 0.9
-            if self.congestion[node] < 0.05:
-                del self.congestion[node]
-
-    def _plan_path(self, curr_node: str,
-                   forced_avoid: set[str] | None = None) -> list[str]:
-        forced_avoid = forced_avoid or set()
-        path = self.orq.get_shortest_valid_path(curr_node, self.goal_node, forced_avoid)
-        if not path:
-            return path
-        hotspots = {n for n in path
-                    if self.congestion.get(n, 0)
-                    >= self.orq.get_node_capacity(n)} - forced_avoid
-
-        if not hotspots:
-            return path
-        detour = self.orq.get_shortest_valid_path(curr_node,
-                                                  self.goal_node,
-                                                  forced_avoid | hotspots)
-        if detour and len(detour) <= len(path) + 2:
-            return detour
-        return path
-
     def run(self) -> None:
         """Execute the main simulation loop until all drones reach their target node."""
         while not all(d.has_arrived for d in self.drones):
@@ -108,7 +79,6 @@ class StateMachine:
         curr_node_usage = {node: 0 for node in self.orq.network}
         curr_link_usage: dict[Any, Any] = {}
         tick_status = {d.id: Move.STILL.value for d in self.drones}
-        self._decay_congestion()
 
         for d in self.drones:
             if d.has_arrived:
@@ -135,7 +105,8 @@ class StateMachine:
                 continue
 
             if not d.path:
-                d.path = self._plan_path(d.curr_node)
+                d.path = self.orq.get_shortest_valid_path(d.curr_node,
+                                                          self.goal_node, set())
                 d.path_index = 0
 
             target = d.next_node
@@ -161,8 +132,9 @@ class StateMachine:
                     tick_status[d.id] = Move.MOVE.value
 
             else:
-                self._register_block(target)
-                new_path = self._plan_path(d.curr_node, forced_avoid={target})
+                new_path = self.orq.get_shortest_valid_path(d.curr_node,
+                                                            self.goal_node,
+                                                            {target})
                 if new_path:
                     curr_path_cost = len(d.path) - d.path_index
                     new_path_cost = len(new_path)
