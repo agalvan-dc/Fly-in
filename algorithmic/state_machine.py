@@ -97,16 +97,29 @@ class StateMachine:
             if d.transit_turns > 0:
                 d.transit_turns -= 1
                 if d.transit_turns == 0:
-                    d.advance()
-                    curr_node_usage[d.curr_node] += 1
-                    tick_status[d.id] = Move.MOVE.value
+                    target = d.next_node
+                    node_cap = (self.orq.get_node_capacity(target)
+                                if target else 0)
+                    if (target and
+                       curr_node_usage.get(target, 0) < node_cap):
+                        used_link = (d.curr_node, d.next_node)
+                        d.advance()
+                        curr_link_usage[used_link] = max(
+                            0, curr_link_usage.get(used_link, 0) - 1)
+                        curr_node_usage[d.curr_node] += 1
+                        tick_status[d.id] = Move.MOVE.value
+                    else:
+                        d.transit_turns = 1
+                        tick_status[d.id] = Move.STILL.value
                 else:
                     tick_status[d.id] = Move.CONNEC.value
                 continue
 
             if not d.path:
                 d.path = self.orq.get_shortest_valid_path(d.curr_node,
-                                                          self.goal_node, set())
+                                                          self.goal_node,
+                                                          set(),
+                                                          seed=d.id)
                 d.path_index = 0
 
             target = d.next_node
@@ -134,7 +147,8 @@ class StateMachine:
             else:
                 new_path = self.orq.get_shortest_valid_path(d.curr_node,
                                                             self.goal_node,
-                                                            {target})
+                                                            {target},
+                                                            seed=d.id)
                 if new_path:
                     curr_path_cost = len(d.path) - d.path_index
                     new_path_cost = len(new_path)
@@ -147,10 +161,17 @@ class StateMachine:
 
         log = []
         for d in self.drones:
+            status = tick_status[d.id]
+            if d.transit_turns > 0 and d.next_node:
+                a = self.orq.get_node_coor(d.curr_node)
+                b = self.orq.get_node_coor(d.next_node)
+                coor = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+            else:
+                coor = self.orq.get_node_coor(d.curr_node)
             log.append({
                 "drone": d.id,
-                "coor": self.orq.get_node_coor(d.curr_node),
-                "status": tick_status[d.id]
+                "coor": coor,
+                "status": status
             })
         self.log[self.tick] = log
 

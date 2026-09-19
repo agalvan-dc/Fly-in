@@ -7,6 +7,8 @@ from typing import Any
 
 import pygame
 
+from algorithmic.state_machine import Move
+
 
 def random_color() -> int:
     """Generate a random opaque RGB color.
@@ -242,6 +244,10 @@ class Renderer:
             else:
                 pygame.draw.circle(window, random_color(), pos, 20)
             pygame.draw.circle(window, (255, 255, 255), pos, 20, 2)
+            if node_data.get("zone") == "restricted":
+                label = self.font.render("2T", True, (255, 180, 0))
+                window.blit(label,
+                            label.get_rect(midbottom=(pos[0], pos[1] - 30)))
 
         # Drones
         if self.current_idx < len(self.tick_keys):
@@ -283,13 +289,21 @@ class Renderer:
                 pygame.draw.polygon(window, color, pointer)
                 pygame.draw.polygon(window, (10, 10, 15), pointer, 2)
 
+                if d.get("status") == Move.CONNEC.value:
+                    label = self.font.render("2T", True, (255, 180, 0))
+                    window.blit(label,
+                                label.get_rect(midbottom=(pos[0],
+                                                          pos[1] - 18)))
+
         menu_options = [
             "Controls:",
             "[ P ] Start / Pause",
             "[ J ] Previous Frame",
             "[ K ] Next Frame",
             "[ SPACE ] Restart",
-            "[ ESC ] Exit"
+            "[ ESC ] Exit",
+            "2T label on node = Restricted (2 turns)",
+            "2T label on drone = Crossing restricted zone"
         ]
 
         y_offset = 15

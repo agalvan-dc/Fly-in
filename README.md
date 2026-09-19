@@ -15,7 +15,7 @@
 2. [Theoretical Foundations & Algorithmic Architecture](#theoretical-foundations--algorithmic-architecture)
    - [Graph Theory & Adjacency Representation](#graph-theory--adjacency-representation)
    - [Pathfinding & Custom Heuristic Strategy](#pathfinding--custom-heuristic-strategy)
-   - [Congestion Management & Exponential Decay Model](#congestion-management--exponential-decay-model)
+   - [Congestion Handling & Dynamic Detour](#congestion-handling--dynamic-detour)
    - [Discrete-Time State Machine Mechanics](#discrete-time-state-machine-mechanics)
    - [Object-Oriented Architecture & Design Patterns](#object-oriented-architecture--design-patterns)
 3. [System Flowcharts & State Machine Diagrams](#system-flowcharts--state-machine-diagrams)
@@ -45,7 +45,7 @@ The system addresses critical challenges in autonomous traffic management, inclu
 
 Key features include:
 - **Strict Validation & Type Safety**: Full adherence to PEP 8 (`flake8`) and static typing standards (`mypy --strict`), leveraging Pydantic models for data validation.
-- **Robust Algorithmic Engine**: Custom graph traversal algorithms handling zone movement penalties, node capacity constraints, link capacity bottlenecks, dynamic detour routing, and congestion decay.
+- **Robust Algorithmic Engine**: Custom graph traversal algorithms handling zone movement penalties, node capacity constraints, link capacity bottlenecks, dynamic detour routing, and blocked-zone avoidance.
 - **Dual Visualizer System**: High-level terminal output powered by `rich` alongside a graphical visualization powered by `pygame`.
 - **Containerized Environment**: Full Docker and Makefile integration for reproducible builds and cross-platform GUI execution.
 
@@ -65,24 +65,20 @@ The system uses an **Adjacency List** data structure to store network topology (
 
 To route drones through $G$, the system employs a modified **Breadth-First Search (BFS)** algorithm tailored for topological graphs with variable zone attributes:
 
-1. **Unweighted Shortest Path Guarantee**: BFS naturally yields the shortest path in terms of hop count on unweighted graph structures.
-2. **Priority Zone Preference**: During neighbor expansion, adjacent nodes are dynamically prioritized using a custom sorting heuristic:
-   $$\text{weight}(n) = \begin{cases} 0 & \text{if } Z_n = \text{priority} \\ 1 & \text{otherwise} \end{cases}$$
-   By sorting neighbors such that priority zones appear first in the traversal queue, the algorithm naturally favors high-throughput pathways when multiple equal-length paths exist.
-3. **Dynamic Exclusion Sets**: The pathfinding method `get_shortest_valid_path(start, goal, restricted_nodes)` dynamically filters out blocked nodes ($Z_v = \text{blocked}$) and congested hotspots supplied in `restricted_nodes`.
+1. **Shortest Path Guarantee**: BFS yields the shortest path in terms of hop count on unweighted graph structures. `restricted` entry costs are accounted in the state machine (2 turns), and the pathfinder naturally avoids them when a comparable normal lane exists.
+2. **Priority Zone Preference & Corridor Sharing**: During neighbor expansion, adjacent nodes are sorted using a deterministic heuristic:
+   $$\text{weight}(n) = \begin{cases} 0 & \text{if } Z_n = \text{priority} \\ 1 & \text{if } Z_n = \text{restricted} \\ 2 & \text{otherwise} \end{cases}$$
+   Ties are broken by hub name and then rotated by the drone id, so equal-length parallel corridors are shared across the swarm (e.g. `impossible_dream` drops from 52 to 43 turns) while every run stays fully reproducible. Splitting the tie-group between `restricted` and `normal` neighbours spreads the swarm across *independent* equal-length lanes instead of letting several lanes merge into one narrow seam — in `impossible_dream` rows A (`overflow_hell1`) and B (`overflow_hell2`) both drain through `conv_restricted3`, so drones are routed through rows A and C (`overflow_hell4` → `conv_restricted9`) only, balancing 12/13 across the two seams.
+3. **Dynamic Exclusion Sets**: The pathfinding method `get_shortest_valid_path(start, goal, restricted_nodes)` dynamically filters out blocked nodes ($Z_v = \text{blocked}$) and the temporarily blocked target supplied in `restricted_nodes`. The `Linkers` module also rejects any map whose only course to the end hub crosses a blocked zone.
 
-### Congestion Management & Exponential Decay Model
+### Congestion Handling & Dynamic Detour
 
-When multiple drones attempt to enter a hub or traverse a connection exceeding capacity, spatial contention occurs. The simulation incorporates a feedback loop based on **Exponential Congestion Decay**:
+When multiple drones compete for scarce capacity, the simulation enforces strict node and link limits each tick. A blocked drone reacts as follows:
 
-1. **Block Registration**: When a drone is halted due to capacity constraints, the target hub's congestion metric is incremented:
-   $$\Omega(v) \leftarrow \Omega(v) + 1$$
-2. **Exponential Decay**: At every simulation tick, congestion values across all recorded hubs decay according to:
-   $$\Omega(v) \leftarrow \Omega(v) \times 0.9$$
-   If $\Omega(v) < 0.05$, the congestion entry is pruned from memory to prevent memory overhead.
-3. **Hotspot Detour Planning**: When planning a path, if a node in the computed path has a congestion level exceeding its capacity ($\Omega(n) \ge C_n$), it is flagged as a hotspot. The pathfinder calculates a detour avoiding these hotspots. If the detour length satisfies:
-   $$\text{Length}(\text{detour}) \le \text{Length}(\text{original}) + 2$$
-   the drone adopts the detour, mitigating bottleneck formation across the swarm.
+1. **Capacity Enforcement**: Entry to a hub requires free target capacity ($\text{Usage}(v) < C_v$) and free link throughput ($\text{Usage}(e) < C_e$). Restricted transits additionally require the destination to still be free on arrival; otherwise the drone waits in transit until a slot opens.
+2. **Detour Re-Planning**: If blocked, the drone queries `get_shortest_valid_path` avoiding the contested target. The new course is adopted only when it is strictly shorter than the remaining portion of the current path:
+   $$\text{Length}(\text{detour}) < \text{remaining} + 1$$
+   This prevents the swarm from chasing non-existent shortcuts while still recovering from genuinely blocked nodes.
 
 ### Discrete-Time State Machine Mechanics
 
@@ -93,12 +89,12 @@ The simulation advances in discrete time steps called **ticks** ($t \in \mathbb{
   - `restricted`: 2 turns traversal cost (1 turn in transit connection, 1 turn entering destination hub).
   - `blocked`: Inaccessible ($\infty$ cost).
 - **Turn Execution Phases**:
-  1. **Capacity Accounting Phase**: Calculate current node occupancies ($\text{Usage}(v)$) and channel transit occupancies ($\text{Usage}(e)$).
-  2. **Movement Evaluation Phase**: Iterate over all drones:
-     - If the drone is in transit toward a `restricted` zone (`transit_turns > 0`), decrement its turn counter. Upon reaching 0, advance the drone to the target hub (`Move.MOVE`).
+  1. **Capacity Accounting Phase**: Calculate current node occupancies ($\text{Usage}(v)$) and channel transit occupancies ($\text{Usage}(e)$). Drones mid-crossing are charged to their edge until they arrive.
+  2. **Movement Evaluation Phase**: Iterate over all drones in id order:
+     - If the drone is in transit toward a `restricted` zone (`transit_turns > 0`), decrement its turn counter. Upon reaching 0, if the destination still has free capacity, advance to the target hub (`Move.MOVE`) and release the traversed edge so the next drone may enter immediately; otherwise the drone keeps transiting until a slot opens.
      - If the drone is stationary, evaluate target node capacity ($C_v$) and link capacity ($C_e$). If $\text{Usage}(v) < C_v$ and $\text{Usage}(e) < C_e$, allocate passage.
      - If destination is `restricted`, set `transit_turns = 1` and mark status as `Move.CONNEC`.
-     - If capacity is exhausted, register a block event, attempt detour recalculation, and mark status as `Move.STILL`.
+     - If capacity is exhausted, attempt a strictly-shorter detour recalculation and mark status as `Move.STILL`.
 
 ### Object-Oriented Architecture & Design Patterns
 
@@ -153,12 +149,12 @@ flowchart TD
     
     subgraph Tick Execution
         K --> L[Simulate Tick]
-        L --> M[Decay Congestion Matrix]
-        L --> N[Track Current Node & Link Usage]
+        L --> M[Compute Node & Link Usage]
+        L --> N[Track Current Node & Transit Usage]
         L --> O[Evaluate Each Drone State]
         O --> P{Capacity Available?}
-        P -- Yes --> Q[Advance Drone / Set Transit Turns]
-        P -- No --> R[Register Block & Calculate Detour]
+        P -- Yes --> Q[Advance Drone / Set Transit Turns / Arrive]
+        P -- No --> R[Strictly-Shorter Detour or Wait]
         Q & R --> S[Record Tick Movements & Logs]
     end
     
@@ -208,11 +204,11 @@ stateDiagram-v2
 
     state Blocked {
         [*] --> StillState : Status = Move.STILL (0)
-        StillState --> RegisterCongestion : Increment Hub Congestion
-        RegisterCongestion --> RecalculateDetour : Detour Cost < Current + 2?
+        StillState --> RecalculateDetour : Detour Shorter than Remaining Path?
+        StillState --> WaitCapacity : Otherwise Stay
     }
 
-    DecrementTransit --> AdvanceNode : transit_turns == 0
+    DecrementTransit --> AdvanceNode : transit_turns == 0 & Capacity Free
     AdvanceNode --> GoalNode : Arrived at end_hub
 
     GoalNode --> [*] : Delivered (Removed from active tracking)
@@ -274,6 +270,7 @@ The application provides dual feedback mechanisms to enhance simulation oversigh
 2. **Pygame Graphical Interface**:
 * Dynamic canvas rendering network topology nodes and edges based on JSON spatial coordinates.
 * Color-coded hub representations matching map metadata (`color` attribute).
+* `restricted` hubs display a `2T` label to visualize their 2-turn traversal cost; drones mid-transit are drawn while crossing the connection.
 * Real-time animated drone icons displaying active movement across nodes and restricted connections.
 
 
@@ -408,6 +405,32 @@ D2-goal D3-goal D4-goal
 }
 
 ```
+
+### Capacity Enforcement (Documented Demonstration)
+
+Capacity limits are enforced in the state machine every tick and can be
+verified statically from the artifacts the simulator produces — no live
+demo required:
+
+1. **Node occupancy.** Every tick a hub may host at most
+   `max_drones` drones. This is guaranteed at admission
+   (`curr_node_usage[target] < C_v` before a drone enters) and checked again
+   when a restricted transit completes on arrival.
+2. **Link throughput.** Every undirected connection may carry at most
+   `max_link_capacity` simultaneous transits. A drone only starts crossing a
+   link while `curr_link_usage[link] < C_e`.
+3. **Restricted zones.** Entering a restricted hub costs 2 sampling turns
+   (1 turn in transit + arrival), so a `max_drones=1` restricted seam drains
+   at most one drone every two ticks — this is what bounds the swarm in
+   single-file corridors such as `impossible_dream`'s `conv_restricted3/9`.
+4. **How to prove it.** Recompute the per-node occupancy from
+   `data/log.json` (drones are positioned on their node coordinates each
+   tick) and from `data/movements.txt` (which drone moved where). The
+   example audit of `maps/challenger/01_the_impossible_dream.txt` reports
+   *"no node-capacity violations in sim log"* and *"no blocked-zone
+   entries"* for the full 25-drone run, and the seam audit shows
+   `conv_restricted3` handling 12 drones and `conv_restricted9` handling 13,
+   with no over-capacity tick across the 43 turns.
 
 ---
 

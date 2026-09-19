@@ -9,14 +9,14 @@ XAUTH ?= $(HOME)/.Xauthority
 
 ifeq ($(OS),Linux)
     GUI_ARGS = -e DISPLAY=$(DISPLAY) \
-               -e XAUTHORITY=/tmp/.Xauthority \
-               -e POETRY_CACHE_DIR=/tmp/poetry-cache \
-               -v /tmp/.X11-unix:/tmp/.X11-unix \
-               -v "$(XAUTH):/tmp/.Xauthority:ro" \
-               --user $$(id -u):$$(id -g) \
-               -e XDG_RUNTIME_DIR=/tmp \
-               -e LIBGL_ALWAYS_SOFTWARE=1 \
-               --security-opt label=disable
+				-e XAUTHORITY=/tmp/.Xauthority \
+				-e POETRY_CACHE_DIR=/tmp/poetry-cache \
+				-v /tmp/.X11-unix:/tmp/.X11-unix \
+				-v "$(XAUTH):/tmp/.Xauthority:ro" \
+				-e XDG_RUNTIME_DIR=/tmp \
+				-e LIBGL_ALWAYS_SOFTWARE=1 \
+				--security-opt label=disable \
+				--ipc=host
 
 else ifeq ($(OS),Darwin)
 	GUI_ARGS = -e DISPLAY=host.docker.internal:0
@@ -24,7 +24,7 @@ else
 	GUI_ARGS = -e DISPLAY=host.docker.internal:0.0
 endif
 
-build:
+install:
 	@docker build -t $(IMAGE_NAME) .
 	@echo "\e[1;32mDocker image mounted\e[0m"
 

@@ -59,12 +59,16 @@ def main() -> None:
                         option = input()
                         print()
         else:
-            filepath = sys.argv[1]
+            map_file = sys.argv[1] if len(sys.argv) > 1 else None
+
+            if map_file is None:
+                console.print("[bold red]Missing map file path.[/bold red]")
+                sys.exit(1)
 
             with console.status("[bold green]Parsing map file...",
                                 spinner="dots") as status:
                 try:
-                    parser(filepath)
+                    parser(map_file)
                     console.print("[bold green]✔[/bold green] Map parsed successfully")
                 except (ValueError, OSError, SyntaxError) as e:
                     console.print(f"[bold red]Parsing error:[/bold red] {e}")

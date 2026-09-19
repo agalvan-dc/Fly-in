@@ -39,6 +39,8 @@ class Factory:
         if not path:
             raise ValueError("Not enough args. Use: <program> <map.txt>")
 
+        Processor.map = {'Hub': {}, 'Connections': {}}
+
         with open(path, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
@@ -222,7 +224,7 @@ class Linkers:
                                 if split_conec[0] != name else split_conec[1])
                     linked_hubs.add(neighbor)
 
-            net[name] = list(linked_hubs)
+            net[name] = sorted(linked_hubs)
 
         if start_nodes and end_nodes:
             reachable = False
@@ -236,7 +238,9 @@ class Linkers:
                         break
                     if curr not in visited:
                         visited.add(curr)
-                        queue.extend(net.get(curr, []))
+                        for nb in net.get(curr, []):
+                            if hubs[nb].get('zone') != 'blocked':
+                                queue.append(nb)
                 if reachable:
                     break
 
